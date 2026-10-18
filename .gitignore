@@ -1,0 +1,102 @@
+# =============================================================
+#  VideoAnomalyDetection — .gitignore
+#  Industry-standard ignores for Python ML/AI projects
+# =============================================================
+
+# ── Python bytecode ──────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# ── Virtual environments ──────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+.env/
+
+# ── Environment variables / secrets ──────────────────────────
+.env
+*.env
+.env.local
+.env.*.local
+secrets.yaml
+secrets.json
+config/local_*.py
+
+# ── ML model checkpoints & large files ───────────────────────
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.pkl
+*.h5
+*.hdf5
+*.onnx
+*.bin
+*.safetensors
+
+# ── Data directories (large raw/processed datasets) ──────────
+data/train/
+data/test/
+data/processed/
+data/demo_videos/
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.npy
+*.npz
+
+# ── Database files ────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Logs & reports ────────────────────────────────────────────
+logs/
+*.log
+results/
+reports/
+*.csv
+wandb/
+mlruns/
+
+# ── Jupyter Notebooks checkpoints ────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── IDE / Editor ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.cursor/
+
+# ── OS generated ─────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Build & dist ─────────────────────────────────────────────
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ── Testing & coverage ───────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
+
+# ── Mypy / type checkers ─────────────────────────────────────
+.mypy_cache/
+.dmypy.json
+
+# ── Antigravity / Claude agent files ─────────────────────────
+.agents/
+.claude/
