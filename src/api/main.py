@@ -111,14 +111,59 @@ async def detect_anomaly_file(
                 pass
 
 @app.get("/api/v1/incidents")
-def get_incidents(limit: int = Query(50, ge=1, le=500)):
+def get_incidents(
+    limit: int = Query(50, ge=1, le=500),
+    min_score: Optional[float] = Query(None, ge=0.0, le=1.0),
+    max_score: Optional[float] = Query(None, ge=0.0, le=1.0),
+    video_source: Optional[str] = Query(None),
+    search: Optional[str] = Query(None)
+):
     """
-    Retrieves historical logged anomaly incidents from SQLite database.
+    Retrieves historical logged anomaly incidents from SQLite database with flexible filters.
     """
+    events = db.fetch_recent_events(
+        limit=limit,
+        min_score=min_score,
+        max_score=max_score,
+        video_source=video_source,
+        search_text=search
+    )
     return {
         "status": "success",
-        "count": len(db.fetch_recent_events(limit=limit)),
-        "incidents": db.fetch_recent_events(limit=limit)
+        "count": len(events),
+        "incidents": events
+    }
+
+@app.get("/api/v1/sessions")
+def get_sessions(
+    limit: int = Query(50, ge=1, le=500),
+    anomaly_only: bool = Query(False),
+    video_source: Optional[str] = Query(None)
+):
+    """
+    Retrieves full video analysis session summaries from SQLite database.
+    """
+    sessions = db.fetch_sessions(limit=limit, anomaly_only=anomaly_only, video_source=video_source)
+    return {
+        "status": "success",
+        "count": len(sessions),
+        "sessions": sessions
+    }
+
+@app.get("/api/v1/sessions/{session_id}")
+def get_session_detail(session_id: int):
+    """
+    Retrieves single session details and full clip-by-clip score timeseries.
+    """
+    session = db.get_session_by_id(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    timeseries = db.fetch_timeseries(session_id)
+    return {
+        "status": "success",
+        "session": session,
+        "timeseries_count": len(timeseries),
+        "timeseries": timeseries
     }
 
 if __name__ == "__main__":

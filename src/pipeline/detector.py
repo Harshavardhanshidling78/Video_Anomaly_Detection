@@ -250,7 +250,6 @@ class VideoAnomalyDetector:
 
         is_anomalous_list = []
         annotated_frames = []
-        last_logged_frame = -100
         total_s = len(scores)
 
         for i, score in enumerate(scores):
@@ -261,33 +260,74 @@ class VideoAnomalyDetector:
 
             frame_idx = center_indices[i]
             target_frame = frames[min(frame_idx, len(frames) - 1)]
-            
             ann_frame = self.draw_annotation(target_frame, score, anom_flag, frame_idx)
             annotated_frames.append(ann_frame)
 
-            if log_to_db and anom_flag and (frame_idx - last_logged_frame > 15):
-                self.db.log_event(
-                    video_source=Path(video_path).name,
-                    frame_number=frame_idx,
-                    anomaly_score=score,
-                    classification="Anomalous",
-                    threshold=effective_thresh,
-                    notes=f"Exceeded alert boundary {effective_thresh:.2f}"
-                )
-                last_logged_frame = frame_idx
+        # ── Compute final result metrics
+        final_max   = max(scores) if scores else 0.0
+        final_avg   = float(np.mean(scores)) if scores else 0.0
+        anom_clips  = sum(is_anomalous_list)
+        anom_flag_any = any(is_anomalous_list)
 
+        # ── Persist to database (3-table schema)
+        session_id = None
+        if log_to_db:
+            try:
+                # 1. Log full session summary
+                session_id = self.db.log_session(
+                    video_source=Path(video_path).name,
+                    spatial_mode=self.spatial_mode,
+                    threshold=effective_thresh,
+                    total_frames=len(frames),
+                    total_clips=len(scores),
+                    anomaly_clips=anom_clips,
+                    max_score=final_max,
+                    avg_score=final_avg,
+                    anomaly_detected=anom_flag_any,
+                    use_ema=use_ema,
+                    use_adaptive=use_adaptive_threshold,
+                    notes=f"adaptive_thresh={effective_thresh:.3f}" if use_adaptive_threshold else ""
+                )
+
+                # 2. Bulk-insert full clip-by-clip score timeseries
+                self.db.log_score_timeseries(
+                    session_id=session_id,
+                    raw_scores=raw_scores,
+                    ema_scores=scores,
+                    is_anomalous=is_anomalous_list
+                )
+
+                # 3. Log individual anomalous-clip events (deduplicated by frame proximity)
+                last_logged_frame = -100
+                for i, (score, anom_flag) in enumerate(zip(scores, is_anomalous_list)):
+                    frame_idx = center_indices[i]
+                    if anom_flag and (frame_idx - last_logged_frame > 15):
+                        self.db.log_event(
+                            video_source=Path(video_path).name,
+                            frame_number=frame_idx,
+                            anomaly_score=score,
+                            classification="Anomalous",
+                            threshold=effective_thresh,
+                            notes=f"Score {score:.4f} exceeded threshold {effective_thresh:.2f}",
+                            session_id=session_id
+                        )
+                        last_logged_frame = frame_idx
+
+            except Exception as e:
+                print(f"[Warning] DB logging failed: {e}")
 
         return {
-            "total_frames": len(frames),
-            "total_clips": len(scores),
-            "raw_scores": raw_scores,
-            "scores": scores,
-            "center_indices": center_indices,
-            "is_anomalous": is_anomalous_list,
+            "total_frames":    len(frames),
+            "total_clips":     len(scores),
+            "raw_scores":      raw_scores,
+            "scores":          scores,
+            "center_indices":  center_indices,
+            "is_anomalous":    is_anomalous_list,
             "annotated_frames": annotated_frames,
-            "max_score": max(scores) if scores else 0.0,
-            "avg_score": float(np.mean(scores)) if scores else 0.0,
-            "anomaly_detected": any(is_anomalous_list)
+            "max_score":       final_max,
+            "avg_score":       final_avg,
+            "anomaly_detected": anom_flag_any,
+            "session_id":      session_id,
         }
 
 if __name__ == "__main__":
