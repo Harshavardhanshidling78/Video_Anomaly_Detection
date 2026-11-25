@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 
 # Add project root to sys.path
-root_dir = Path(__file__).resolve().parent
+root_dir = Path(__file__).resolve().parent.parent
 if str(root_dir) not in sys.path:
     sys.path.insert(0, str(root_dir))
 
@@ -98,12 +98,12 @@ def run_batch(folder: str, threshold: float, output_csv: str = None, limit: int 
     model_file = str(ckpt_path) if ckpt_path.exists() else None
     if not model_file:
         print(f"\n[Error] No trained model found at: {ckpt_path}")
-        print("  Please run: python train.py  first.")
+        print("  Please run: python scripts/train.py first.")
         sys.exit(1)
 
     print(f"  Model Checkpoint: {ckpt_path.name}  ({ckpt_path.stat().st_size / (1024*1024):.1f} MB)")
 
-    detector = VideoAnomalyDetector(model_path=model_file, threshold=threshold)
+    detector = VideoAnomalyDetector(model_path=model_file, spatial_mode="vit", threshold=threshold)
 
     print_header()
 

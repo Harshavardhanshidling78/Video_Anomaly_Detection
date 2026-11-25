@@ -1,3 +1,12 @@
+import os
+import sys
+from pathlib import Path
+
+# Ensure project root directory is in sys.path
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 import unittest
 from fastapi.testclient import TestClient
 from src.api.main import app
@@ -21,3 +30,4 @@ class TestAPIEndpoints(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
