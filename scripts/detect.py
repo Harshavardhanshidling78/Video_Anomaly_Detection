@@ -3,7 +3,7 @@ import argparse
 from pathlib import Path
 
 # Add root directory to sys.path
-root_dir = Path(__file__).resolve().parent
+root_dir = Path(__file__).resolve().parent.parent
 if str(root_dir) not in sys.path:
     sys.path.insert(0, str(root_dir))
 
@@ -88,6 +88,7 @@ def run_detection(video_path: str, threshold: float = ANOMALY_THRESHOLD):
 
     detector = VideoAnomalyDetector(
         model_path=model_file,
+        spatial_mode="vit",
         threshold=threshold
     )
 
@@ -141,7 +142,7 @@ def run_detection(video_path: str, threshold: float = ANOMALY_THRESHOLD):
 
     if is_anomalous:
         print("[!] VERDICT: [ANOMALOUS EVENT DETECTED!]")
-        print("    Alert recorded to SQLite database (data/anomaly_events.db).")
+        print("    Alert recorded to database.")
     else:
         print("[*] VERDICT: [NORMAL SURVEILLANCE ACTIVITY]")
     print("=" * 65)
@@ -165,7 +166,7 @@ if __name__ == "__main__":
         # Default behavior when run with no arguments: inspect checkpoint
         inspect_checkpoint()
         print("\nCLI Usage Examples:")
-        print("  python detect.py --video data/train/normal/-1l5631l3fg_0.avi")
-        print("  python detect.py --video data/train/anomalous/-1l5631l3fg_0.avi")
-        print("  python detect.py --audit")
-        print("  python evaluate.py")
+        print("  python scripts/detect.py --video data/train/normal/-1l5631l3fg_0.avi")
+        print("  python scripts/detect.py --video data/train/anomalous/-1l5631l3fg_0.avi")
+        print("  python scripts/detect.py --audit")
+        print("  python scripts/evaluate.py")

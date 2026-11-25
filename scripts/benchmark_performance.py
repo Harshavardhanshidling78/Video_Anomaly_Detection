@@ -6,18 +6,22 @@ root_dir = Path(__file__).resolve().parent.parent
 if str(root_dir) not in sys.path:
     sys.path.insert(0, str(root_dir))
 
-from src.config import DEMO_DIR
+from src.config import DATA_DIR
 from src.pipeline.detector import VideoAnomalyDetector
 
 def benchmark():
-    video_path = DEMO_DIR / "anomalous_event_demo.mp4"
-    if not video_path.exists():
-        from scripts.generate_demo_data import create_demo_videos
-        create_demo_videos()
+    candidate_videos = list((DATA_DIR / "train" / "anomalous").glob("*.mp4")) + list((DATA_DIR / "train" / "anomalous").glob("*.avi"))
+    if not candidate_videos:
+        candidate_videos = list((DATA_DIR / "train" / "normal").glob("*.mp4")) + list((DATA_DIR / "train" / "normal").glob("*.avi"))
+    if not candidate_videos:
+        print("[Error] No benchmark video found in data/train.")
+        return
+
+    video_path = candidate_videos[0]
 
 
 
-    detector = VideoAnomalyDetector(spatial_mode="fast")
+    detector = VideoAnomalyDetector(spatial_mode="vit")
     
     print(f"--- Benchmarking High-Performance Video Anomaly Backend ---")
     print(f"Target Video: {video_path}")

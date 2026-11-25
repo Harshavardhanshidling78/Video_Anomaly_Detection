@@ -13,13 +13,17 @@ class RecurrentTemporalModel(nn.Module):
         hidden_dim: int = TEMPORAL_HIDDEN_DIM,
         num_layers: int = TEMPORAL_NUM_LAYERS,
         cell_type: str = RECURRENT_TYPE,
-        dropout: float = 0.2
+        dropout: float = 0.2,
+        bidirectional: bool = True
     ):
         super(RecurrentTemporalModel, self).__init__()
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.num_layers = num_layers
         self.cell_type = cell_type.upper()
+        self.bidirectional = bidirectional
+        effective_hidden = hidden_dim * 2 if bidirectional else hidden_dim
+        self.output_dim = effective_hidden
 
         if self.cell_type == "GRU":
             self.rnn = nn.GRU(
@@ -28,7 +32,7 @@ class RecurrentTemporalModel(nn.Module):
                 num_layers=num_layers,
                 batch_first=True,
                 dropout=dropout if num_layers > 1 else 0.0,
-                bidirectional=False
+                bidirectional=bidirectional
             )
         else: # Default LSTM
             self.rnn = nn.LSTM(
@@ -37,11 +41,11 @@ class RecurrentTemporalModel(nn.Module):
                 num_layers=num_layers,
                 batch_first=True,
                 dropout=dropout if num_layers > 1 else 0.0,
-                bidirectional=False
+                bidirectional=bidirectional
             )
 
         self.attention = nn.Sequential(
-            nn.Linear(hidden_dim, 64),
+            nn.Linear(effective_hidden, 64),
             nn.Tanh(),
             nn.Linear(64, 1),
             nn.Softmax(dim=1)

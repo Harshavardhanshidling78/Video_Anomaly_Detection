@@ -44,19 +44,13 @@ pip install -r requirements.txt
 
 ## 🚀 Quick Start Guide
 
-### Step 1: Generate Demo Videos
-Create synthetic surveillance videos (Normal walking vs Anomalous chaotic disturbance) for instant testing:
-```bash
-python scripts/generate_demo_data.py
-```
-
-### Step 2: Train & Fine-Tune Model
+### Step 1: Train & Fine-Tune Model
 Train the recurrent temporal anomaly detector on sequence features from your dataset (`data/train/normal` and `data/train/anomalous`):
 ```bash
 python scripts/train.py --epochs 20 --batch_size 16 --spatial_mode vit --cell_type LSTM
 ```
 
-### Step 3: Evaluate Model Performance
+### Step 2: Evaluate Model Performance
 Evaluate performance metrics (Precision, Recall, F1-Score, ROC-AUC) on test clips:
 ```bash
 python scripts/evaluate.py --spatial_mode vit --cell_type LSTM
@@ -80,6 +74,17 @@ Start the FastAPI server for REST API endpoints:
 python -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000
 ```
 
+### Step 7: (Optional) Connect PostgreSQL & Migrate Data
+To use PostgreSQL instead of SQLite:
+1. Configure `DATABASE_URL` in `.env`:
+   ```env
+   DATABASE_URL=postgresql://username:password@localhost:5432/video_anomaly_db
+   ```
+2. Migrate existing historical data from SQLite to PostgreSQL:
+   ```bash
+   python scripts/migrate_to_postgres.py
+   ```
+
 ---
 
 ## 📂 Enterprise Directory Structure
@@ -91,7 +96,6 @@ VideoAnomalyDetection/
 ├── checkpoints/                        # Model Weights Artifacts (.pth)
 │   └── best_model.pth
 ├── data/                               # Standardized Dataset Hierarchy
-│   ├── demo_videos/                    # Sample Surveillance Video Clips
 │   ├── train/                          # Custom Training Dataset (2,000+ Videos)
 │   │   ├── normal/                     # Normal Surveillance Videos
 │   │   └── anomalous/                  # Anomaly Surveillance Videos
@@ -100,10 +104,14 @@ VideoAnomalyDetection/
 │   │   └── anomalous/
 │   └── anomaly_events.db               # SQLite Audit Database
 ├── scripts/                            # CLI Execution Scripts
+│   ├── detect.py                       # Single Video Detection & Model Inspection CLI
+│   ├── batch_evaluate.py               # Batch Video Directory Scanner & CSV Reporter
 │   ├── train.py                        # Training & Fine-Tuning CLI
 │   ├── evaluate.py                     # Evaluation Metrics CLI
 │   ├── benchmark_performance.py        # Inference Throughput Benchmark
-│   └── generate_demo_data.py           # Synthetic Demo Data Generator
+│   └── migrate_to_postgres.py          # SQLite to PostgreSQL Migration CLI
+├── run_all.py                          # Full-Stack Launcher (FastAPI + Streamlit)
+├── run_all.bat                         # Windows 1-Click Launch Script
 ├── src/                                # Core Modular Package Source Code
 │   ├── config.py                       # Hyperparameters & Configurations
 │   ├── api/                            # Production REST API Service
@@ -111,7 +119,7 @@ VideoAnomalyDetection/
 │   ├── dashboard/                      # Production Dashboard Service
 │   │   └── app.py                      # Streamlit Real-Time Dashboard
 │   ├── models/                         # PyTorch Deep Learning Models
-│   │   ├── vit_extractor.py            # Vision Transformer (ViT-B/16 & MobileNet)
+│   │   ├── vit_extractor.py            # Vision Transformer (ViT-B/16 Spatial Extractor)
 │   │   ├── temporal_model.py           # LSTM/GRU Recurrent Sequence Network
 │   │   └── anomaly_classifier.py       # End-to-End Detector Model
 │   ├── preprocessing/                  # Data Ingestion Layer

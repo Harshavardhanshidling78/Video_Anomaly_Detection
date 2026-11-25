@@ -22,7 +22,7 @@ if sys.platform == "win32":
 # Initialize FastAPI App
 app = FastAPI(
     title="Video Anomaly Detection REST API",
-    description="Production REST API for automated CCTV video anomaly detection using ViT / MobileNet + LSTM/GRU",
+    description="Production REST API for automated CCTV video anomaly detection using ViT + LSTM/GRU",
     version="1.0.0"
 )
 
@@ -30,7 +30,7 @@ app = FastAPI(
 # Global Instance Management
 ckpt_path = CHECKPOINT_DIR / "best_model.pth"
 model_file = str(ckpt_path) if ckpt_path.exists() else None
-detector = VideoAnomalyDetector(model_path=model_file, spatial_mode="fast")
+detector = VideoAnomalyDetector(model_path=model_file, spatial_mode="vit")
 db = AnomalyDatabase()
 
 # Pydantic Schemas
@@ -68,7 +68,7 @@ def health_check():
 async def detect_anomaly_file(
     file: UploadFile = File(...),
     threshold: float = Query(ANOMALY_THRESHOLD, ge=0.0, le=1.0),
-    spatial_mode: str = Query("fast", pattern="^(fast|vit)$")
+    spatial_mode: str = Query("vit", pattern="^(vit|torchvision_vit)$")
 ):
     """
     Upload a video file (MP4, AVI, MOV) for automated anomaly score detection.

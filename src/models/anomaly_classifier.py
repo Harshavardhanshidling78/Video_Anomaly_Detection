@@ -15,33 +15,37 @@ from src.config import (
 class VideoAnomalyDetectorModel(nn.Module):
     """
     End-to-End Deep Learning Architecture for Video Anomaly Detection:
-    1. Spatial Extractor: ViT-B/16 or Fast MobileNetV3 (B, T, 768)
+    1. Spatial Extractor: ViT-B/16 (B, T, 768)
     2. Feature Norm: LayerNorm(768) for batch-independent scale stabilization
     3. LSTM/GRU: Analyzes temporal relationships across consecutive frames (B, T, 768 -> B, 256)
     4. Classification Head: LayerNorm FC + Sigmoid producing Anomaly Score [0.0 - 1.0]
     """
     def __init__(
         self,
-        spatial_mode: str = "fast",
+        spatial_mode: str = "vit",
         pretrained_vit: bool = True,
         cell_type: str = RECURRENT_TYPE,
         hidden_dim: int = TEMPORAL_HIDDEN_DIM,
-        threshold: float = ANOMALY_THRESHOLD
+        threshold: float = ANOMALY_THRESHOLD,
+        bidirectional: bool = True
     ):
         super(VideoAnomalyDetectorModel, self).__init__()
         self.spatial_mode = spatial_mode
         self.cell_type = cell_type
         self.threshold = threshold
+        self.bidirectional = bidirectional
         self.spatial_extractor = SpatialFeatureExtractor(mode=spatial_mode, pretrained=pretrained_vit)
         self.feature_norm = nn.LayerNorm(SPATIAL_FEATURE_DIM)
         self.temporal_encoder = RecurrentTemporalModel(
             input_dim=SPATIAL_FEATURE_DIM,
             hidden_dim=hidden_dim,
-            cell_type=cell_type
+            cell_type=cell_type,
+            bidirectional=bidirectional
         )
         
+        temporal_out_dim = getattr(self.temporal_encoder, "output_dim", hidden_dim * 2 if bidirectional else hidden_dim)
         self.classifier_head = nn.Sequential(
-            nn.Linear(hidden_dim, 128),
+            nn.Linear(temporal_out_dim, 128),
             nn.LayerNorm(128),
             nn.ReLU(inplace=True),
             nn.Dropout(0.3),
